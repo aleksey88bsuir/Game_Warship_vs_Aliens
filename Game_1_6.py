@@ -44,15 +44,15 @@ for snd in ['Music/expl3.wav', 'Music/expl6.wav']:
 
 
 class Ship(pygame.sprite.Sprite):
-    player_images = {}
-    player_images['full_hp'] = pygame.image.load('GO_1000_500/Ship_hp_100.png')
-    player_images['medium_hp'] = pygame.image.load('GO_1000_500/Ship_hp_40-70.png')
-    player_images['low_hp'] = pygame.image.load('GO_1000_500/Ship_hp_40.png')
+    full_hp = pygame.image.load('GO_1000_500/Ship_hp_100.png')
+    medium_hp = pygame.image.load('GO_1000_500/Ship_hp_40-70.png')
+    low_hp = pygame.image.load('GO_1000_500/Ship_hp_40.png')
+    player_images = {'full_hp': full_hp,
+                     'medium_hp': medium_hp,
+                     'low_hp': low_hp}
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        # self.image = pygame.Surface((50, 40))
-        # self.image.fill((0, 255, 0))
         self.image = self.player_images['full_hp']
         self.rect = self.image.get_rect()
         self.rect.centerx = WIDTH / 2
@@ -73,9 +73,7 @@ class Ship(pygame.sprite.Sprite):
         self.rocket_delay = 200
         self.count_rocket = 15
         self.last_rotate = 30
-        # self.angle = 0
         self.last_launch = pygame.time.get_ticks()
-        # self.death_rotate = pygame.time.get_ticks()
 
     def update(self):
         key_state_in_ship = pygame.key.get_pressed()
@@ -129,7 +127,7 @@ class Ship(pygame.sprite.Sprite):
             if now - self.last_shot > self.shoot_delay:
                 self.last_shot = now
                 if self.power == 1:
-                    bullet = Bullet(self.rect.left + 15, self.rect.top)
+                    bullet = Bullet(self.rect.left+33, self.rect.top)
                     shoot_img = Explosion(bullet.rect.center, 'shoot')
                     shoot_img.frame_rate = 2
                     all_sprites.add(shoot_img)
@@ -137,8 +135,8 @@ class Ship(pygame.sprite.Sprite):
                     bullets.add(bullet)
                     shoot_sound.play()
                 if self.power >= 2:
-                    bullet1 = Bullet(self.rect.left, self.rect.centery)
-                    bullet2 = Bullet(self.rect.right, self.rect.centery)
+                    bullet1 = Bullet(self.rect.left+33, self.rect.centery)
+                    bullet2 = Bullet(self.rect.right-33, self.rect.centery)
                     shoot_img1 = Explosion(bullet1.rect.center, 'shoot')
                     shoot_img1.frame_rate = 2
                     all_sprites.add(shoot_img1)
