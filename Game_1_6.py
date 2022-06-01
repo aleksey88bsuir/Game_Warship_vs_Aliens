@@ -190,7 +190,7 @@ class Mob(pygame.sprite.Sprite):
     SMALL = 1
     MEDIUM = 2
     LARGE = 3
-    SPAWN = 2
+    SPAWN = 3
     POINTS = 30
     images = {SMALL: pygame.image.load('GO_1000_500/small_ship.png'),
               MEDIUM: pygame.image.load('GO_1000_500/middle_ship.png'),
