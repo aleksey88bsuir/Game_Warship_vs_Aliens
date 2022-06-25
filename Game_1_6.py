@@ -1,6 +1,7 @@
 import pygame
 import random
 import description
+from animations import animate
 
 WIDTH = 1000
 HEIGHT = 500
@@ -10,26 +11,7 @@ POWER_UP_TIME = 5000
 score = 0
 
 font_name = pygame.font.match_font('arial')
-
-
-'''Анимация'''
-explosion_anim = {'large': [], 'small': [], 'player': [], 'shoot': []}
-for i in range(9):
-    filename = 'Explosions_kenney/regularExplosion0{}.png'.format(i)
-    img = pygame.image.load(filename)
-    image_large = pygame.transform.scale(img, (75, 75))
-    explosion_anim['large'].append(image_large)
-    image_small = pygame.transform.scale(img, (32, 32))
-    explosion_anim['small'].append(image_small)
-    filename = 'Shmup_player_expl/sonicExplosion0{}.png'.format(i)
-    img = pygame.image.load(filename)
-    image_player = pygame.transform.scale(img, (50, 50))
-    explosion_anim['player'].append(image_player)
-for i in range(3):
-    filename = 'Shoot_anim/MG_shot_{}.png'.format(i)
-    img = pygame.image.load(filename)
-    image_shoot = pygame.transform.scale(img, (30, 40))
-    explosion_anim['shoot'].append(image_shoot)
+animate_ = animate()
 
 
 """Звуки"""
@@ -190,7 +172,7 @@ class Mob(pygame.sprite.Sprite):
     SMALL = 1
     MEDIUM = 2
     LARGE = 3
-    SPAWN = 3
+    SPAWN = 10
     POINTS = 30
     images = {SMALL: pygame.image.load('GO_1000_500/small_ship.png'),
               MEDIUM: pygame.image.load('GO_1000_500/middle_ship.png'),
@@ -408,7 +390,7 @@ class Explosion(pygame.sprite.Sprite):
     def __init__(self, center, type_of_animation):
         pygame.sprite.Sprite.__init__(self)
         self.type_of_animation = type_of_animation
-        self.image = explosion_anim[self.type_of_animation][0]
+        self.image = animate_[self.type_of_animation][0]
         self.rect = self.image.get_rect()
         self.rect.center = center
         self.frame = 0
@@ -420,11 +402,11 @@ class Explosion(pygame.sprite.Sprite):
         if now - self.last_update > self.frame_rate:
             self.last_update = now
             self.frame += 1
-            if self.frame == len(explosion_anim[self.type_of_animation]):
+            if self.frame == len(animate_[self.type_of_animation]):
                 self.kill()
             else:
                 center = self.rect.center
-                self.image = explosion_anim[self.type_of_animation][self.frame]
+                self.image = animate_[self.type_of_animation][self.frame]
                 self.rect = self.image.get_rect()
                 self.rect.center = center
 
@@ -506,21 +488,15 @@ def is_player_alive():
 
 def show_go_screen(player):
     number_of_mobs, number_of_balloons, running = 0, 0, True
-    screen.blit(background['hello'], background_rect)
     Mob.total = Balloon.total = 0
     if player is None:
-        draw_text(screen, description.welcome_to_game, 48,
-                  WIDTH / 2, HEIGHT / 4)
+        screen.blit(background['hello'], background_rect)
     elif player.lives == 0:
         draw_text(screen, description.lose, 64, WIDTH / 2, HEIGHT / 4)
     elif Mob.total == 0 and Balloon.total == 0:
-        draw_text(screen, description.win, 64, WIDTH / 2, HEIGHT / 4)
+        screen.blit(background['victory'], background_rect)
     else:
         draw_text(screen, "This is bag", 64, WIDTH / 2, HEIGHT / 4)
-    draw_text(screen, description.rules, 20, WIDTH / 2,
-              HEIGHT / 2)
-    draw_text(screen, description.about_the_developer, 18, WIDTH / 2,
-              HEIGHT * 3 / 4)
     pygame.display.flip()
     waiting = True
     while waiting:
@@ -569,22 +545,22 @@ def play_animation_on_hit(coord, size):
     all_sprites.add(expl)
 
 
+background = {}
+background['game'] = pygame.image.load('GO_1000_500/Background.jpg')
+background['hello'] = pygame.image.load('GO_1000_500/Hello.jpg')
+background['victory'] = pygame.image.load('GO_1000_500/Winner.jpg')
+background['defeat'] = pygame.image.load('GO_1000_500/Background.jpg')
+background_rect = background['hello'].get_rect()
+game_over = True
+running = True
+player = None
+
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("My first game")
 pygame.display.set_icon(pygame.image.load("Pictures/icons8-ок-16.png"))
 clock = pygame.time.Clock()
-background = {}
-background['game'] = pygame.image.load('GO_1000_500/Background.jpg')
-background['hello'] = pygame.image.load('GO_1000_500/Backgrounds/BG_1.bmp')
-background['victory'] = pygame.image.load('GO_1000_500/Background.jpg')
-background['defeat'] = pygame.image.load('GO_1000_500/Background.jpg')
-background_rect = background['hello'].get_rect()
 
-
-game_over = True
-running = True
-player = None
 
 while running:
     if game_over:
@@ -714,3 +690,7 @@ while running:
     pygame.display.flip()
 
 pygame.quit()
+
+
+# if __name__ == "__main__":
+#     main()
