@@ -492,7 +492,7 @@ def show_go_screen(player):
     if player is None:
         screen.blit(background['hello'], background_rect)
     elif player.lives == 0:
-        draw_text(screen, description.lose, 64, WIDTH / 2, HEIGHT / 4)
+        screen.blit(background['defeat'], background_rect)
     elif Mob.total == 0 and Balloon.total == 0:
         screen.blit(background['victory'], background_rect)
     else:
@@ -549,7 +549,7 @@ background = {}
 background['game'] = pygame.image.load('GO_1000_500/Background.jpg')
 background['hello'] = pygame.image.load('GO_1000_500/Hello.jpg')
 background['victory'] = pygame.image.load('GO_1000_500/Winner.jpg')
-background['defeat'] = pygame.image.load('GO_1000_500/Background.jpg')
+background['defeat'] = pygame.image.load('GO_1000_500/Defeat.jpg')
 background_rect = background['hello'].get_rect()
 game_over = True
 running = True
