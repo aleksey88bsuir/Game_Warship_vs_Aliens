@@ -2,6 +2,7 @@ import pygame
 import random
 import description
 from animations import animate
+from sound import expl_sound, shoot_sound
 
 WIDTH = 1000
 HEIGHT = 500
@@ -11,21 +12,11 @@ POWER_UP_TIME = 5000
 score = 0
 
 font_name = pygame.font.match_font('arial')
-animate_ = animate()
-
-
-"""Звуки"""
-pygame.mixer.init()
-pygame.mixer.music.load('Music/tgfcoder-FrozenJam-SeamlessLoop.mp3')
-pygame.mixer.music.set_volume(0.1)
-pygame.mixer.music.play(loops=-1)
-shoot_sound = pygame.mixer.Sound('Music/expl3.wav')
-expl_sound = []
-for snd in ['Music/expl3.wav', 'Music/expl6.wav']:
-    expl_sound.append((pygame.mixer.Sound(snd)))
+animate_ = animate()   # Импорт анимации
 
 
 class Ship(pygame.sprite.Sprite):
+    """Класс корабля, которым управляет игрок."""
     full_hp = pygame.image.load('GO_1000_500/Ship_hp_100.png')
     medium_hp = pygame.image.load('GO_1000_500/Ship_hp_40-70.png')
     low_hp = pygame.image.load('GO_1000_500/Ship_hp_40.png')
@@ -72,9 +63,9 @@ class Ship(pygame.sprite.Sprite):
             if self.speed_x < self.min_speed:
                 self.speed_x = self.min_speed
         if key_state_in_ship[pygame.K_SPACE]:
-            self.shoot()
+            self.shoot(all_sprites=all_sprites, bullets=bullets)
         if key_state_in_ship[pygame.K_b]:
-            self.launch_rocket()
+            self.launch_rocket(all_spr=all_sprites, rockets_=rockets)
         if self.direction_ship == 'right':
             self.rect.x += self.speed_x
         else:
@@ -103,7 +94,7 @@ class Ship(pygame.sprite.Sprite):
         else:
             self.image = self.player_images['low_hp']
 
-    def shoot(self):
+    def shoot(self, all_sprites, bullets):
         now = pygame.time.get_ticks()
         if not self.hidden:
             if now - self.last_shot > self.shoot_delay:
@@ -143,14 +134,14 @@ class Ship(pygame.sprite.Sprite):
     def receive_damage(self, damage):
         self.health -= damage
 
-    def launch_rocket(self):
+    def launch_rocket(self, all_spr, rockets_):
         now = pygame.time.get_ticks()
         if now - self.last_launch > self.rocket_delay and \
                 self.count_rocket > 0:
             self.last_launch = now
             new_rocket = Rocket(self.rect.centerx+5, self.rect.top)
-            all_sprites.add(new_rocket)
-            rockets.add(new_rocket)
+            all_spr.add(new_rocket)
+            rockets_.add(new_rocket)
             self.count_rocket -= 1
 
     def death_player(self):
@@ -168,11 +159,12 @@ class Ship(pygame.sprite.Sprite):
 
 
 class Mob(pygame.sprite.Sprite):
+    """Класс прищельцев."""
     total = 0
     SMALL = 1
     MEDIUM = 2
     LARGE = 3
-    SPAWN = 10
+    SPAWN = 2
     POINTS = 30
     images = {SMALL: pygame.image.load('GO_1000_500/small_ship.png'),
               MEDIUM: pygame.image.load('GO_1000_500/middle_ship.png'),
@@ -183,13 +175,10 @@ class Mob(pygame.sprite.Sprite):
     def __init__(self, x, y, size):
         pygame.sprite.Sprite.__init__(self)
         Mob.total += 1
-        #self.image = pygame.Surface((20, 20))
         self.image = Mob.images[size]
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        # self.rect.x = random.randrange(WIDTH - self.rect.width)
-        # self.rect.y = 0
         self.speed_y = random.randrange(1, 8)
         self.speed_x = random.randrange(1, 8)
         self.direction_mod_x = random.choice(['right', 'left'])
@@ -213,10 +202,13 @@ class Mob(pygame.sprite.Sprite):
             self.direction_mod_y = 'up'
         if self.rect.top < 0:
             self.direction_mod_y = 'down'
+        self.throw_bomb(all_spr=all_sprites, bombs_=bombs)
+
+    def throw_bomb(self, all_spr, bombs_):
         if random.randrange(Mob.bomb_change) == 0:
-            next_bomb = Bomb(self.rect.x, self.rect.y)
-            all_sprites.add(next_bomb)
-            bombs.add(next_bomb)
+            next_bomb = Bomb(self.rect.centerx, self.rect.bottom)
+            all_spr.add(next_bomb)
+            bombs_.add(next_bomb)
 
     def die(self):
         if self.size != Mob.SMALL:
@@ -228,14 +220,13 @@ class Mob(pygame.sprite.Sprite):
 
 
 class Balloon(pygame.sprite.Sprite):
+    """Летающие тарелки, поведение отличается от class Mob."""
     total = 0
     min_speed = 1
     max_speed = 10
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        # self.image = pygame.Surface((20, 40))
-        # self.image.fill(('yellow'))
         self.image = pygame.image.load('GO_1000_500/ballon_ship.png')
         self.rect = self.image.get_rect()
         self.rect.centerx = random.randrange(WIDTH-self.rect.x)
@@ -256,14 +247,13 @@ class Balloon(pygame.sprite.Sprite):
 
 
 class Bomb(pygame.sprite.Sprite):
+    """Бомбы, которые сбрасывают инопланетяне"""
     min_damage = 20
     max_damage = 60
 
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
-        # self.image = pygame.Surface((10, 10))
         self.image = pygame.image.load('GO_1000_500/laserRed03.png')
-        # self.image.fill((0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.bottom = y
         self.rect.centerx = x
@@ -276,11 +266,11 @@ class Bomb(pygame.sprite.Sprite):
 
 
 class Bullet(pygame.sprite.Sprite):
+    """Пули, выпускаемые нами из корабля"""
+
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load('GO_1000_500/laserBlue03.png')
-        # self.image = pygame.Surface((4, 4))
-        # self.image.fill((255, 255, 255))
         self.rect = self.image.get_rect()
         self.rect.bottom = y
         self.rect.centerx = x
@@ -293,10 +283,10 @@ class Bullet(pygame.sprite.Sprite):
 
 
 class Rocket(Bullet):
+    """Ракеты, выпускаемые нами из корабля"""
+
     def __init__(self, x, y):
         Bullet.__init__(self, x, y)
-        # self.image = pygame.Surface((3, 15))
-        # self.image.fill((28, 255, 127))
         self.image = pygame.image.load('GO_1000_500/rocket.png')
         self.rect = self.image.get_rect()
         self.rect.bottom = y
@@ -305,6 +295,8 @@ class Rocket(Bullet):
 
 
 class Mine(pygame.sprite.Sprite):
+    """Мины, наносят урон игроку, если наплыть на них"""
+
     min_damage = 90
     max_damage = 110
     BUFFER = 200
@@ -334,7 +326,7 @@ class Mine(pygame.sprite.Sprite):
             if self.rect.bottom == HEIGHT - 50:
                 self.direction_mine = 'up'
 
-    def move_up(self):
+    def move_up(self, player):
         if player.rect.centerx >= 500:
             self.rect.centerx = random.randrange(0, player.rect.centerx -
                                                  Mine.BUFFER)
@@ -348,6 +340,7 @@ class Mine(pygame.sprite.Sprite):
 
 
 class Speedometer(pygame.sprite.Sprite):
+    """Отображает текущую скорость корабля"""
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load('GO_1000_500/Speedometr_arrow.png')
@@ -356,9 +349,9 @@ class Speedometer(pygame.sprite.Sprite):
         self.orig = self.image
 
     def update(self):
-        self.rotate()
+        self.rotate(player=player)
 
-    def rotate(self):
+    def rotate(self, player):
         delta_angle = player.speed_x * 30
         angle = 160 - delta_angle
         self.image = pygame.transform.rotate(self.orig, angle)
@@ -366,14 +359,13 @@ class Speedometer(pygame.sprite.Sprite):
 
 
 class Pow(pygame.sprite.Sprite):
+    """Апгрейды корабля, сбрасываются с подбитых кораблей"""
     powerup_images = {'health': pygame.image.load('GO_1000_500/health_up.png'),
                       'gun': pygame.image.load('GO_1000_500/gun_up.png'),
                       'rocket': pygame.image.load('GO_1000_500/rocket_up.png')}
 
     def __init__(self, center):
         pygame.sprite.Sprite.__init__(self)
-        # self.image = pygame.Surface((5, 5))
-        # self.image.fill((127, 127, 127))
         self.type = random.choice(['health', 'gun', 'rocket'])
         self.image = self.powerup_images[self.type]
         self.rect = self.image.get_rect()
@@ -387,6 +379,7 @@ class Pow(pygame.sprite.Sprite):
 
 
 class Explosion(pygame.sprite.Sprite):
+    """Класс отвечает за отрисовку анимации в игре"""
     def __init__(self, center, type_of_animation):
         pygame.sprite.Sprite.__init__(self)
         self.type_of_animation = type_of_animation
@@ -412,6 +405,7 @@ class Explosion(pygame.sprite.Sprite):
 
 
 def draw_health_bar(surf, x, y, health):
+    """Рисует полоску жизни игрока"""
     if health < 0:
         health = 0
     bar_length = 100
@@ -431,6 +425,7 @@ def draw_health_bar(surf, x, y, health):
 
 
 def draw_text(surf, text, size, x, y):
+    """Отображение текста на экране"""
     font = pygame.font.Font(font_name, size)
     text_surface = font.render(text, True, (158, 36, 45))
     text_rect = text_surface.get_rect()
@@ -439,9 +434,8 @@ def draw_text(surf, text, size, x, y):
 
 
 def draw_lives(surf, x, y, lives):
+    """Рисует количество оставшихся жизней у игрока"""
     for live in range(lives):
-        # img = pygame.Surface((25, 25))
-        # img.fill((0, 255, 0))
         player_img = pygame.image.load('GO_1000_500/Ship_hp_100.png')
         img = pygame.transform.scale(player_img, (25, 19))
         img_rect = img.get_rect()
@@ -451,6 +445,7 @@ def draw_lives(surf, x, y, lives):
 
 
 def draw_rockets(x, y, number_of_rockets):
+    """Рисует количество оставшихся ракет у игрока"""
     for rocket in range(number_of_rockets):
         img = pygame.Surface((3, 15))
         img.fill((28, 255, 127))
@@ -460,22 +455,22 @@ def draw_rockets(x, y, number_of_rockets):
         screen.blit(img, img_rect)
 
 
-def new_mob():
+def new_mob(all_spr, mobs_):
     size = random.randint(1, 3)
     x = random.randrange(WIDTH - 50)
     y = random.randint(0, MIN_HEIGHT_FOR_MOB)
     m = Mob(x, y, size)
-    all_sprites.add(m)
-    mobs.add(m)
+    all_spr.add(m)
+    mobs_.add(m)
 
 
-def create_balloon():
+def create_balloon(all_spr, balloons_):
     new_balloon = Balloon()
-    all_sprites.add(new_balloon)
-    balloons.add(new_balloon)
+    all_spr.add(new_balloon)
+    balloons_.add(new_balloon)
 
 
-def is_player_alive():
+def is_player_alive(player):
     if player.health <= 0:
         death_explosion = Explosion(hit.rect.center, 'player')
         all_sprites.add(death_explosion)
@@ -483,7 +478,7 @@ def is_player_alive():
         player.hide()
         player.lives -= 1
         player.health = 100
-    return True if player.lives == 0 else False
+    return player.lives == 0
 
 
 def show_go_screen(player):
@@ -539,10 +534,10 @@ def stop_the_game():
                 pause_in_game = False
 
 
-def play_animation_on_hit(coord, size):
+def play_animation_on_hit(coord, size, all_spr):
     random.choice(expl_sound).play()
     expl = Explosion(coord, size)
-    all_sprites.add(expl)
+    all_spr.add(expl)
 
 
 background = {}
@@ -580,9 +575,9 @@ while running:
         balloons = pygame.sprite.Group()
         all_sprites.add(new_mine)
         for i in range(number_of_mobs):
-            new_mob()
+            new_mob(all_spr=all_sprites, mobs_=mobs)
         for i in range(number_of_balloons):
-            create_balloon()
+            create_balloon(all_spr=all_sprites, balloons_=balloons)
         player = Ship()
         all_sprites.add(player)
         score = 0
@@ -605,7 +600,7 @@ while running:
 
     new_mine.event += 1
     if new_mine.event == FPS * 5 and new_mine.hidden:
-        new_mine.move_up()
+        new_mine.move_up(player=player)
         new_mine.event = 0
         new_mine.hidden = False
     if new_mine.event == FPS * 10 and not new_mine.hidden:
@@ -617,7 +612,7 @@ while running:
     hits = pygame.sprite.groupcollide(mobs, bullets, True, True)
     for hit in hits:
         score += int(Mob.POINTS / hit.size)
-        play_animation_on_hit(hit.rect.center, 'small')
+        play_animation_on_hit(hit.rect.center, 'small', all_spr=all_sprites)
         hit.die()
         Mob.total -= 1
         if random.random() > 0.6:
@@ -628,7 +623,7 @@ while running:
     hits = pygame.sprite.groupcollide(balloons, bullets, True, True)
     for hit in hits:
         score += 100
-        play_animation_on_hit(hit.rect.center, 'small')
+        play_animation_on_hit(hit.rect.center, 'small', all_spr=all_sprites)
         new_bomb = Bomb(hit.rect.x, hit.rect.y)
         new_bomb.speed_y = -30
         all_sprites.add(new_bomb)
@@ -645,16 +640,16 @@ while running:
     hits = pygame.sprite.groupcollide(balloons, rockets, True, True)
     for hit in hits:
         score += 300
-        play_animation_on_hit(hit.rect.center, 'large')
+        play_animation_on_hit(hit.rect.center, 'large', all_spr=all_sprites)
         hit.kill()
         Balloon.total -= 1
 
     hits = pygame.sprite.spritecollide(player, bombs, True)
     for hit in hits:
         bomb_damage = random.randint(Bomb.min_damage, Bomb.max_damage)
-        play_animation_on_hit(hit.rect.center, 'player')
+        play_animation_on_hit(hit.rect.center, 'player', all_spr=all_sprites)
         player.receive_damage(bomb_damage)
-        game_over = is_player_alive()
+        game_over = is_player_alive(player=player)
 
     hits = pygame.sprite.spritecollide(player, powerups, True)
     for hit in hits:
@@ -670,19 +665,17 @@ while running:
     hits = pygame.sprite.spritecollide(player, mines, True)
     for hit in hits:
         mine_damage = random.randint(Mine.min_damage, Mine.max_damage)
-        play_animation_on_hit(hit.rect.center, 'player')
+        play_animation_on_hit(hit.rect.center, 'player', all_spr=all_sprites)
         player.receive_damage(mine_damage)
-        game_over = is_player_alive()
+        game_over = is_player_alive(player=player)
         new_mine.kill()
         if not game_over:
             new_mine = Mine()
             all_sprites.add(new_mine)
             mines.add(new_mine)
 
-    # water = pygame.image.load('GO_1000_500/water_1.png')
     screen.blit(background['game'], background_rect)
     all_sprites.draw(screen)
-    # screen.blit(water, (0, 420))
     draw_health_bar(screen, 5, 5, player.health)
     draw_text(screen, str(score), 28, WIDTH / 2, 20)
     draw_lives(screen, WIDTH - 100, 5, player.lives)
