@@ -10,7 +10,6 @@ def main():
         if game_over:
             number_of_mobs, number_of_balloons, running = show_go_screen(player)
             game_over = False
-
             new_mine = Mine()
             mines.add(new_mine)
             all_sprites.add(new_mine)

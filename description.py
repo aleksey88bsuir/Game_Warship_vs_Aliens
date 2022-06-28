@@ -8,9 +8,3 @@ rules: str = 'В игре три уровня сложности.\n' \
         'Стрелки "влево" и "вправо" изменяют направление движения\n' \
         '"й" - выход из игры.'
 about_the_developer:  str = 'Шепелевич Алексей Александрович'
-
-print(welcome_to_game)
-print(win)
-print(lose)
-print(rules)
-print(about_the_developer)

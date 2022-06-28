@@ -332,8 +332,6 @@ class Mine(pygame.sprite.Sprite):
         self.rect.bottom = HEIGHT + 100
 
 
-
-
 class Pow(pygame.sprite.Sprite):
     """Апгрейды корабля, сбрасываются с подбитых кораблей"""
     powerup_images = {'health': pygame.image.load('GO_1000_500/health_up.png'),
@@ -520,7 +518,7 @@ def show_go_screen(player):
 
 
 def stop_the_game():
-    screen.blit(background, background_rect)
+    # screen.blit(background['hello'], background_rect)
     draw_text(screen, 'PAUSE', 64, WIDTH / 2, HEIGHT / 4)
     draw_text(screen, description.about_the_developer, 18, WIDTH / 2,
               HEIGHT * 3 / 4)
